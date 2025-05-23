@@ -1,5 +1,5 @@
 '''
-Main script to fetch Substack posts and prepare for analysis.
+Main script to fetch Substack posts and analyze them with Gemini.
 '''
 import asyncio
 import json
@@ -8,16 +8,18 @@ import os
 from datetime import datetime
 from typing import List
 
-from scraper import SubstackScraper, Post # Assuming scraper.py is in the same directory
+from scraper import SubstackScraper, Post
+from analyzer import SubstackAnalyzer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Configuration ---
-SUBSTACK_URL = "https://jonathanpolitzki.substack.com/" # Your Substack URL
+SUBSTACK_URL = "https://jonathanpolitzki.substack.com/"
 OUTPUT_DIR = "substack_data"
 POSTS_FILE = os.path.join(OUTPUT_DIR, "substack_posts.json")
-MAX_POSTS_TO_FETCH = 1000 # Adjust as needed
+ANALYSIS_FILE = os.path.join(OUTPUT_DIR, "analysis_results.json")
+MAX_POSTS_TO_FETCH = 1000
 
 # --- Helper Functions ---
 def ensure_dir(directory: str):
@@ -28,17 +30,19 @@ def ensure_dir(directory: str):
 
 def save_posts_to_json(posts: List[Post], filename: str):
     """Saves a list of Post objects to a JSON file."""
-    ensure_dir(os.path.dirname(filename))
-    # Convert datetime objects to ISO format strings for JSON serialization
     posts_data = []
     for post in posts:
-        post_dict = post.__dict__
-        if isinstance(post_dict['date'], datetime):
-            post_dict['date'] = post_dict['date'].isoformat()
-        posts_data.append(post_dict)
+        posts_data.append({
+            "title": post.title,
+            "url": post.url,
+            "content": post.content,
+            "date": post.date.isoformat() if post.date else None,
+            "subtitle": post.subtitle,
+        })
     
     with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(posts_data, f, indent=4, ensure_ascii=False)
+        json.dump(posts_data, f, ensure_ascii=False, indent=2)
+    
     logging.info(f"Successfully saved {len(posts)} posts to {filename}")
 
 def load_posts_from_json(filename: str) -> List[Post]:
@@ -46,129 +50,142 @@ def load_posts_from_json(filename: str) -> List[Post]:
     if not os.path.exists(filename):
         logging.warning(f"Posts file not found: {filename}. Returning empty list.")
         return []
+    
     with open(filename, 'r', encoding='utf-8') as f:
         posts_data = json.load(f)
     
-    loaded_posts = []
+    posts = []
     for data in posts_data:
-        # Convert date string back to datetime object if it exists
-        if data.get('date') and isinstance(data['date'], str):
-            try:
-                data['date'] = datetime.fromisoformat(data['date'])
-            except ValueError:
-                logging.warning(f"Could not parse date string: {data['date']} for post titled '{data.get('title')}'. Setting date to None.")
-                data['date'] = None
-        loaded_posts.append(Post(**data))
-    logging.info(f"Successfully loaded {len(loaded_posts)} posts from {filename}")
-    return loaded_posts
-
-async def fetch_and_save_posts():
-    """Fetches posts using the scraper and saves them."""
-    logging.info(f"Starting Substack scrape for: {SUBSTACK_URL}")
-    scraper = SubstackScraper(url=SUBSTACK_URL, max_posts=MAX_POSTS_TO_FETCH)
-    posts = await scraper.scrape()
-
-    if posts:
-        save_posts_to_json(posts, POSTS_FILE)
-    else:
-        logging.warning("No posts were scraped.")
+        post = Post(
+            title=data['title'],
+            url=data['url'],
+            content=data['content'],
+            date=datetime.fromisoformat(data['date']) if data['date'] else None,
+            subtitle=data.get('subtitle', ''),
+        )
+        posts.append(post)
+    
+    logging.info(f"Loaded {len(posts)} posts from {filename}")
     return posts
 
-# --- Placeholder for Gemini Analysis ---
+def save_analysis_results(results: dict, filename: str):
+    """Save analysis results to a JSON file."""
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(results, f, ensure_ascii=False, indent=2)
+    logging.info(f"Analysis results saved to {filename}")
+
+# --- Main Functions ---
+async def fetch_posts(url: str, max_posts: int) -> List[Post]:
+    """Fetches posts from the given Substack URL."""
+    scraper = SubstackScraper(url, max_posts)
+    posts = await scraper.scrape()
+    return posts
+
 def analyze_posts_with_gemini(posts: List[Post]):
     """
-    Placeholder function for analyzing posts with Gemini long context.
-    This function should:
-    1. Prepare the data (e.g., concatenate content, format for Gemini API).
-    2. Call the Gemini API with the prepared data.
-    3. Process and log the analysis results.
+    Analyze posts using Gemini API.
     """
     if not posts:
         logging.warning("No posts available for analysis.")
         return
+    
+    # Check for API key
+    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        logging.error("GEMINI_API_KEY not found in environment variables.")
+        logging.info("To use Gemini analysis:")
+        logging.info("1. Get an API key from https://makersuite.google.com/app/apikey")
+        logging.info("2. Set it as an environment variable: export GEMINI_API_KEY='your-key-here'")
+        logging.info("3. Or create a .env file with: GEMINI_API_KEY=your-key-here")
+        return
+    
+    try:
+        analyzer = SubstackAnalyzer(api_key)
+        
+        logging.info("Generating statistics...")
+        stats = analyzer.generate_statistics(posts)
+        
+        logging.info("Creating visualizations...")
+        viz_path = analyzer.create_visualizations(posts, OUTPUT_DIR)
+        
+        logging.info("Running Gemini analysis on writing evolution...")
+        evolution_analysis = analyzer.analyze_writing_evolution(posts)
+        
+        # Analyze specific themes
+        themes = ["technology", "AI", "entrepreneurship", "personal growth", "philosophy", "startup"]
+        logging.info(f"Analyzing themes: {themes}")
+        themes_analysis = analyzer.analyze_specific_themes(posts, themes)
+        
+        # Combine all results
+        results = {
+            "statistics": stats,
+            "visualization_path": viz_path,
+            "evolution_analysis": evolution_analysis,
+            "themes_analysis": themes_analysis,
+            "analysis_timestamp": datetime.now().isoformat()
+        }
+        
+        # Save results
+        save_analysis_results(results, ANALYSIS_FILE)
+        
+        # Print summary
+        print("\n" + "="*50)
+        print("ANALYSIS COMPLETE")
+        print("="*50)
+        print(f"Total posts analyzed: {stats['total_posts']}")
+        print(f"Total words: {stats['total_words']:,}")
+        print(f"Average words per post: {stats['average_words_per_post']:,}")
+        print(f"Date range: {posts[0].date.strftime('%B %Y')} to {posts[-1].date.strftime('%B %Y')}")
+        print(f"\nVisualization saved to: {viz_path}")
+        print(f"Full analysis saved to: {ANALYSIS_FILE}")
+        
+        if 'analysis' in evolution_analysis:
+            print("\n" + "="*50)
+            print("WRITING EVOLUTION SUMMARY (from Gemini)")
+            print("="*50)
+            print(evolution_analysis['analysis'][:1000] + "...")  # First 1000 chars
+            
+    except Exception as e:
+        logging.error(f"Error during analysis: {e}")
+        logging.info("Make sure you have installed all dependencies: pip install -r requirements.txt")
 
-    logging.info(f"Starting analysis for {len(posts)} posts (placeholder)...")
+async def main():
+    """Main function to coordinate scraping and analysis."""
+    ensure_dir(OUTPUT_DIR)
     
-    # Calculate total content size and token estimate
-    total_chars = 0
-    total_words = 0
-    for post in posts:
-        if post.content:
-            total_chars += len(post.content)
-            total_words += len(post.content.split())
-        if post.title:
-            total_chars += len(post.title)
-            total_words += len(post.title.split())
+    # Try to load existing posts first
+    posts = load_posts_from_json(POSTS_FILE)
     
-    # Rough token estimation (1 token ≈ 4 characters or 0.75 words)
-    estimated_tokens_by_chars = total_chars / 4
-    estimated_tokens_by_words = total_words / 0.75
-    estimated_tokens = int((estimated_tokens_by_chars + estimated_tokens_by_words) / 2)
+    if not posts:
+        logging.info("No local posts found. Fetching from Substack...")
+        logging.info(f"Starting Substack scrape for: {SUBSTACK_URL}")
+        posts = await fetch_posts(SUBSTACK_URL, MAX_POSTS_TO_FETCH)
+        
+        if posts:
+            save_posts_to_json(posts, POSTS_FILE)
+        else:
+            logging.error("Failed to fetch posts from Substack.")
+            return
     
-    logging.info(f"Content statistics:")
-    logging.info(f"  - Total characters: {total_chars:,}")
-    logging.info(f"  - Total words: {total_words:,}")
-    logging.info(f"  - Estimated tokens: {estimated_tokens:,}")
+    # Analyze posts
+    analyze_posts_with_gemini(posts)
     
-    # Example: Concatenate all content for a simple analysis
-    # all_content = "\n\n---\n\n".join([f"Title: {p.title}\nDate: {p.date}\n\n{p.content}" for p in posts])
-    
-    # print("\n--- Combined Content for Gemini (First 1000 chars) ---")
-    # print(all_content[:1000] + "...")
-    # print("\n--- End of Combined Content Sample ---")
-
-    # --- TODO: Implement Gemini API call here ---
-    # 1. Authenticate with Gemini API
-    # 2. Format the prompt and data for the API
-    #    - Consider how to handle the total length of content if it exceeds context window.
-    #    - You might need to send posts sentimientos, or summaries.
-    # 3. Send the request to Gemini (e.g., using the `google-generativeai` library)
-    #    Example prompt structure:
-    #    prompt = f"""
-    #    Analyze the following Substack posts by ITNAmatter.
-    #    Identify the progression of themes and topics over time.
-    #    What are the main arguments or ideas presented?
-    #    Are there any recurring patterns or shifts in perspective?
-    #    Provide a summary of the overall evolution of the blog's content.
-    #    
-    #    Posts data:
-    #    {all_content}
-    #    """
-    # 4. Parse the response from Gemini
-    # 5. Log or save the analysis results
-    
-    logging.info("Gemini analysis placeholder complete. Implement API calls to get actual analysis.")
-    # For now, let's just print some basic stats
+    # Log summary
     if posts:
         logging.info(f"Total posts to analyze: {len(posts)}")
         
-        # Get posts with valid dates
-        posts_with_dates = [p for p in posts if p.date]
-        if posts_with_dates:
-            logging.info(f"Oldest post date: {min(p.date for p in posts_with_dates)}")
-            logging.info(f"Newest post date: {max(p.date for p in posts_with_dates)}")
-        else:
-            logging.info("No posts have valid dates")
-
-async def main():
-    """Main execution function."""
-    ensure_dir(OUTPUT_DIR)
-    
-    # Option 1: Always fetch new posts
-    # posts = await fetch_and_save_posts()
-    
-    # Option 2: Load existing posts if available, otherwise fetch
-    posts = load_posts_from_json(POSTS_FILE)
-    if not posts:
-        logging.info("No local posts found. Fetching from Substack...")
-        posts = await fetch_and_save_posts()
-    else:
-        logging.info(f"Loaded {len(posts)} posts from {POSTS_FILE}. To refetch, delete this file.")
-
-    if posts:
-        analyze_posts_with_gemini(posts)
-    else:
-        logging.error("No posts available to analyze.")
+        # Get date range
+        dates = [p.date for p in posts if p.date]
+        if dates:
+            logging.info(f"Oldest post date: {min(dates)}")
+            logging.info(f"Newest post date: {max(dates)}")
 
 if __name__ == "__main__":
+    # Load environment variables from .env file if it exists
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+    
     asyncio.run(main()) 

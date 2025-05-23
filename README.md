@@ -1,13 +1,21 @@
 # Substack Analyzer
 
-This repository contains scripts to fetch Substack posts from a given URL, store them, and provides a framework for analyzing them (e.g., using Gemini).
+This repository contains scripts to fetch Substack posts from a given URL, store them, analyze them using Google's Gemini AI, and create visualizations of writing patterns over time.
+
+## Features
+
+- 📥 Fetches posts from any Substack RSS feed
+- 💾 Stores posts locally in JSON format
+- 📊 Generates statistics and visualizations
+- 🤖 Analyzes writing evolution using Gemini AI
+- 🎯 Tracks themes and patterns over time
 
 ## Setup
 
 1.  **Clone the repository (or create the files as described):**
     ```bash
-    # If this were a git repo, you'd clone it.
-    # For now, ensure you have main.py, scraper.py, and requirements.txt
+    git clone <repository-url>
+    cd Substack-Analysis
     ```
 
 2.  **Create a virtual environment (recommended):**
@@ -21,49 +29,71 @@ This repository contains scripts to fetch Substack posts from a given URL, store
     pip install -r requirements.txt
     ```
 
+4.  **Set up Gemini API key:**
+    - Get an API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+    - Create a `.env` file in the project root:
+      ```
+      GEMINI_API_KEY=your-api-key-here
+      ```
+    - Or export it as an environment variable:
+      ```bash
+      export GEMINI_API_KEY='your-api-key-here'
+      ```
+
 ## Configuration
 
--   Open `main.py`.
--   Modify the `SUBSTACK_URL` variable to point to your Substack blog URL if different from the default.
+-   Open `main.py` and modify the `SUBSTACK_URL` variable if needed:
     ```python
     SUBSTACK_URL = "https://yourusername.substack.com/"
     ```
--   You can also adjust `MAX_POSTS_TO_FETCH` if needed.
 
-## Running the Scraper
+## Usage
 
-To fetch (or re-fetch) posts and save them to `substack_data/substack_posts.json`:
-
+Run the main script:
 ```bash
-python main.py
+python3 main.py
 ```
 
-The script will first try to load posts from the JSON file. If the file doesn't exist or is empty, it will then fetch posts from Substack.
-To force a refetch, delete the `substack_data/substack_posts.json` file before running the script.
+The script will:
+1. Fetch posts from the Substack RSS feed (limited to 20 most recent)
+2. Save them to `substack_data/substack_posts.json`
+3. Generate statistics and visualizations
+4. Use Gemini to analyze:
+   - Writing evolution over time
+   - Theme development
+   - Style changes
+   - Personal/professional growth
+5. Save analysis results to `substack_data/analysis_results.json`
 
-## Data
+## Output Files
 
--   Fetched posts are stored in `substack_data/substack_posts.json`.
--   Each post includes its title, URL, content, date, and subtitle (if available).
+- `substack_data/substack_posts.json` - Raw post data
+- `substack_data/substack_analysis.png` - Visualization charts
+- `substack_data/analysis_results.json` - Gemini analysis results
 
-## Analysis with Gemini (Placeholder)
+## Limitations
 
-The `main.py` script includes a placeholder function `analyze_posts_with_gemini(posts)`.
-To implement the analysis:
+- RSS feeds typically only provide the 20 most recent posts
+- To analyze all posts, you may need to export from Substack's dashboard
 
-1.  **Install the Gemini library:**
-    ```bash
-    pip install google-generativeai
-    ```
-    (Uncomment it in `requirements.txt` as well if you plan to re-install dependencies later)
+## Customization
 
-2.  **Update `analyze_posts_with_gemini` in `main.py`:**
-    -   Add your Gemini API key and authentication logic.
-    -   Prepare the post data (e.g., combine content, create specific prompts).
-    -   Make calls to the Gemini API.
-    -   Process and store or display the analysis results.
+### Analyzing Different Themes
 
-    Refer to the comments within the function for more detailed guidance.
+Edit the themes list in `main.py`:
+```python
+themes = ["technology", "AI", "entrepreneurship", "personal growth", "philosophy", "startup"]
+```
+
+### Adjusting Visualizations
+
+Modify the `create_visualizations()` method in `analyzer.py` to customize charts.
+
+## Troubleshooting
+
+- **SSL Certificate Error**: The scraper disables SSL verification. For production use, consider proper certificate handling.
+- **No posts found**: Check that the Substack URL is correct and publicly accessible.
+- **Gemini API errors**: Ensure your API key is valid and you haven't exceeded rate limits.
 
 ## Project Structure
 
