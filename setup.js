@@ -158,7 +158,11 @@ async function setup() {
   console.log(chalk.green('✓ Python 3 and pip3 found'));
   
   // Check if running via npx or locally
-  const isNpx = process.env.npm_execpath && process.env.npm_execpath.includes('npx');
+  const isNpx = process.env.npm_execpath && process.env.npm_execpath.includes('npx') || 
+                __dirname.includes('.npm/_npx') || 
+                __dirname.includes('node_modules');
+  
+  console.log(chalk.gray(`Detection: isNpx=${isNpx}, __dirname=${__dirname}`));
   
   // Prompt for configuration
   const questions = [
