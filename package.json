@@ -1,6 +1,6 @@
 {
   "name": "substack-analysis-mcp",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "MCP server for Substack essay analysis using Gemini AI",
   "main": "index.js",
   "type": "module",

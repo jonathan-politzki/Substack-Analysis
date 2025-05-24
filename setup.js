@@ -104,7 +104,7 @@ async function checkPythonDependencies() {
 
 // Download Python files from GitHub
 async function downloadPythonFiles(installDir) {
-  const baseUrl = 'https://raw.githubusercontent.com/yourusername/substack-analysis/main';
+  const baseUrl = 'https://raw.githubusercontent.com/jonathan-politzki/Substack-Analysis/main';
   const files = [
     { name: 'scraper.py', url: `${baseUrl}/scraper.py` },
     { name: 'analyzer.py', url: `${baseUrl}/analyzer.py` },
@@ -115,15 +115,16 @@ async function downloadPythonFiles(installDir) {
   
   for (const file of files) {
     try {
+      console.log(chalk.gray(`Downloading ${file.name} from ${file.url}...`));
       const response = await fetch(file.url);
       if (!response.ok) {
         throw new Error(`Failed to download ${file.name}: ${response.statusText}`);
       }
       const content = await response.text();
       await fs.writeFile(path.join(installDir, file.name), content);
-      console.log(chalk.gray(`✓ Downloaded ${file.name}`));
+      console.log(chalk.green(`✓ Downloaded ${file.name}`));
     } catch (error) {
-      console.log(chalk.yellow(`⚠ Could not download ${file.name}, will try copying from npm package...`));
+      console.log(chalk.yellow(`⚠ Could not download ${file.name}: ${error.message}`));
       // Fallback: try to copy from current directory if available
       try {
         const sourcePath = path.join(__dirname, file.name);
@@ -132,6 +133,7 @@ async function downloadPythonFiles(installDir) {
         console.log(chalk.gray(`✓ Copied ${file.name} from package`));
       } catch (copyError) {
         console.error(chalk.red(`✗ Failed to get ${file.name}: ${error.message}`));
+        throw new Error(`Cannot install without ${file.name}`);
       }
     }
   }
