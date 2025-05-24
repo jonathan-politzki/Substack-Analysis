@@ -8,6 +8,9 @@ import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import os from 'os';
 
+// Add fetch for Node.js versions that don't have it built-in
+const fetch = globalThis.fetch || (await import('node-fetch')).default;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -99,6 +102,41 @@ async function checkPythonDependencies() {
   }
 }
 
+// Download Python files from GitHub
+async function downloadPythonFiles(installDir) {
+  const baseUrl = 'https://raw.githubusercontent.com/jonathan-politzki/Substack-Analysis/main';
+  const files = [
+    { name: 'scraper.py', url: `${baseUrl}/scraper.py` },
+    { name: 'analyzer.py', url: `${baseUrl}/analyzer.py` },
+    { name: 'requirements.txt', url: `${baseUrl}/requirements.txt` }
+  ];
+
+  console.log(chalk.cyan('📥 Downloading Python components...'));
+  
+  for (const file of files) {
+    try {
+      const response = await fetch(file.url);
+      if (!response.ok) {
+        throw new Error(`Failed to download ${file.name}: ${response.statusText}`);
+      }
+      const content = await response.text();
+      await fs.writeFile(path.join(installDir, file.name), content);
+      console.log(chalk.gray(`✓ Downloaded ${file.name}`));
+    } catch (error) {
+      console.log(chalk.yellow(`⚠ Could not download ${file.name}, will try copying from npm package...`));
+      // Fallback: try to copy from current directory if available
+      try {
+        const sourcePath = path.join(__dirname, file.name);
+        const destPath = path.join(installDir, file.name);
+        await fs.copyFile(sourcePath, destPath);
+        console.log(chalk.gray(`✓ Copied ${file.name} from package`));
+      } catch (copyError) {
+        console.error(chalk.red(`✗ Failed to get ${file.name}: ${error.message}`));
+      }
+    }
+  }
+}
+
 // Main setup function
 async function setup() {
   console.clear();
@@ -159,16 +197,11 @@ async function setup() {
     // Create directory
     await fs.mkdir(installDir, { recursive: true });
     
-    // Copy necessary files
+    // Copy necessary files from npm package
     const filesToCopy = [
-      // MCP server files
       { src: 'index.js', dest: 'index.js' },
       { src: 'package.json', dest: 'package.json' },
-      { src: 'README.md', dest: 'README.md' },
-      // Python files from parent directory
-      { src: '../scraper.py', dest: 'scraper.py' },
-      { src: '../analyzer.py', dest: 'analyzer.py' },
-      { src: '../requirements.txt', dest: 'requirements.txt' }
+      { src: 'README.md', dest: 'README.md' }
     ];
     
     for (const file of filesToCopy) {
@@ -181,6 +214,9 @@ async function setup() {
         console.error(chalk.red(`Failed to copy ${file.src}: ${error.message}`));
       }
     }
+    
+    // Download Python files from GitHub
+    await downloadPythonFiles(installDir);
     
     // Install Node dependencies
     console.log(chalk.cyan('📥 Installing Node.js dependencies...'));
