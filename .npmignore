@@ -1,0 +1,7 @@
+# Files to exclude from npm package
+node_modules/
+.env
+.DS_Store
+*.tgz
+claude_config.json
+env.example 

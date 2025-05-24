@@ -7,7 +7,7 @@ This tool fetches your Substack essays, analyzes them using Google's Gemini AI (
 **Install in 30 seconds with one command:**
 
 ```bash
-npx substack-analyzer-mcp
+npx substack-analysis-mcp
 ```
 
 This will:
@@ -90,7 +90,7 @@ You can also use this analyzer directly in Claude Desktop as an MCP server!
 
 Just run:
 ```bash
-npx substack-analyzer-mcp
+npx substack-analysis-mcp
 ```
 
 The interactive setup will guide you through everything!

@@ -1,6 +1,12 @@
-# Substack Analyzer MCP Server
+# Substack Analysis MCP Server
 
 This is an MCP (Model Context Protocol) server that allows you to analyze your Substack essays using Google's Gemini AI directly from Claude Desktop.
+
+## Quick Install
+
+```bash
+npx substack-analysis-mcp
+```
 
 ## Features
 
@@ -57,7 +63,7 @@ You need to add this MCP server to your Claude Desktop configuration.
    ```json
    {
      "mcpServers": {
-       "substack-analyzer": {
+       "substack-analysis": {
          "command": "node",
          "args": [
            "/Users/jonathanpolitzki/Desktop/Coding/Substack-Analysis/mcp-server/index.js"

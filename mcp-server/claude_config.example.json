@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "substack-analyzer": {
+    "substack-analysis": {
       "command": "node",
       "args": [
         "/path/to/your/Substack-Analysis/mcp-server/index.js"

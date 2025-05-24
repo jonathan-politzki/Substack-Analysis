@@ -8,13 +8,16 @@ import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import os from 'os';
 
+// Add fetch for Node.js versions that don't have it built-in
+const fetch = globalThis.fetch || (await import('node-fetch')).default;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ASCII art banner
 const banner = `
 ╔════════════════════════════════════════════╗
-║     ${chalk.cyan('Substack Analyzer MCP Setup')}         ║
+║     ${chalk.cyan('Substack Analysis MCP Setup')}         ║
 ║  ${chalk.gray('Analyze your writing with Gemini AI')}    ║
 ╚════════════════════════════════════════════╝
 `;
@@ -99,12 +102,47 @@ async function checkPythonDependencies() {
   }
 }
 
+// Download Python files from GitHub
+async function downloadPythonFiles(installDir) {
+  const baseUrl = 'https://raw.githubusercontent.com/yourusername/substack-analysis/main';
+  const files = [
+    { name: 'scraper.py', url: `${baseUrl}/scraper.py` },
+    { name: 'analyzer.py', url: `${baseUrl}/analyzer.py` },
+    { name: 'requirements.txt', url: `${baseUrl}/requirements.txt` }
+  ];
+
+  console.log(chalk.cyan('📥 Downloading Python components...'));
+  
+  for (const file of files) {
+    try {
+      const response = await fetch(file.url);
+      if (!response.ok) {
+        throw new Error(`Failed to download ${file.name}: ${response.statusText}`);
+      }
+      const content = await response.text();
+      await fs.writeFile(path.join(installDir, file.name), content);
+      console.log(chalk.gray(`✓ Downloaded ${file.name}`));
+    } catch (error) {
+      console.log(chalk.yellow(`⚠ Could not download ${file.name}, will try copying from npm package...`));
+      // Fallback: try to copy from current directory if available
+      try {
+        const sourcePath = path.join(__dirname, file.name);
+        const destPath = path.join(installDir, file.name);
+        await fs.copyFile(sourcePath, destPath);
+        console.log(chalk.gray(`✓ Copied ${file.name} from package`));
+      } catch (copyError) {
+        console.error(chalk.red(`✗ Failed to get ${file.name}: ${error.message}`));
+      }
+    }
+  }
+}
+
 // Main setup function
 async function setup() {
   console.clear();
   console.log(banner);
   
-  console.log(chalk.yellow('Welcome! Let\'s set up your Substack Analyzer for Claude Desktop.\n'));
+  console.log(chalk.yellow('Welcome! Let\'s set up your Substack Analysis for Claude Desktop.\n'));
   
   // Check Python dependencies
   console.log(chalk.cyan('🐍 Checking Python dependencies...'));
@@ -159,16 +197,11 @@ async function setup() {
     // Create directory
     await fs.mkdir(installDir, { recursive: true });
     
-    // Copy necessary files
+    // Copy necessary files from npm package
     const filesToCopy = [
-      // MCP server files
       { src: 'index.js', dest: 'index.js' },
       { src: 'package.json', dest: 'package.json' },
-      { src: 'README.md', dest: 'README.md' },
-      // Python files from parent directory
-      { src: '../scraper.py', dest: 'scraper.py' },
-      { src: '../analyzer.py', dest: 'analyzer.py' },
-      { src: '../requirements.txt', dest: 'requirements.txt' }
+      { src: 'README.md', dest: 'README.md' }
     ];
     
     for (const file of filesToCopy) {
@@ -181,6 +214,9 @@ async function setup() {
         console.error(chalk.red(`Failed to copy ${file.src}: ${error.message}`));
       }
     }
+    
+    // Download Python files from GitHub
+    await downloadPythonFiles(installDir);
     
     // Install Node dependencies
     console.log(chalk.cyan('📥 Installing Node.js dependencies...'));
@@ -233,7 +269,7 @@ async function setup() {
   
   // Create .env file in MCP server directory
   const envPath = isNpx ? path.join(installDir, '.env') : path.join(__dirname, '.env');
-  const envContent = `# Substack Analyzer MCP Configuration
+  const envContent = `# Substack Analysis MCP Configuration
 GEMINI_API_KEY=${answers.geminiApiKey}
 SUBSTACK_URL=${answers.substackUrl}
 `;
@@ -281,7 +317,7 @@ SUBSTACK_URL=${answers.substackUrl}
   
   // Success message
   console.log(chalk.green('\n✨ Setup complete!\n'));
-  console.log(chalk.white('The Substack Analyzer MCP server has been configured.'));
+  console.log(chalk.white('The Substack Analysis MCP server has been configured.'));
   console.log(chalk.white('\nNext steps:'));
   console.log(chalk.cyan('1. Restart Claude Desktop'));
   console.log(chalk.cyan('2. You can now use these commands:'));

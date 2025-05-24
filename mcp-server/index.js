@@ -61,7 +61,7 @@ async function runPythonScript(scriptPath, args = []) {
 // Create the MCP server
 const server = new Server(
   {
-    name: 'substack-analyzer-mcp',
+    name: 'substack-analysis-mcp',
     version: '1.0.0',
   },
   {
