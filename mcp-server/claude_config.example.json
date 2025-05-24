@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "substack-analyzer": {
+      "command": "node",
+      "args": [
+        "/path/to/your/Substack-Analysis/mcp-server/index.js"
+      ],
+      "env": {
+        "GEMINI_API_KEY": "your-gemini-api-key-here",
+        "SUBSTACK_URL": "https://yoursubstack.substack.com/"
+      }
+    }
+  }
+} 

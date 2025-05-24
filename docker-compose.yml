@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  substack-analyzer:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      # Optional: mount a .env file if you have one
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    container_name: substack-analyzer 

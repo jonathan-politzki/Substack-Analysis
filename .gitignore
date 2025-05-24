@@ -1,3 +1,17 @@
 .env
 __pycache__/
+*.pyc
 substack_data/
+
+# MCP Server
+mcp-server/node_modules/
+mcp-server/.env
+mcp-server/temp_*.py
+mcp-server/claude_config.json
+
+# Temporary data files
+temp_posts_data*.json
+temp_*.py
+
+# OS files
+.DS_Store

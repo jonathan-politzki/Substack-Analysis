@@ -2,6 +2,33 @@
 
 This tool fetches your Substack essays, analyzes them using Google's Gemini AI (specifically `gemini-2.5-pro-preview-05-06`), and provides an interactive web interface to explore insights about your writing.
 
+## 🚀 Quick Install for Claude Desktop (NEW!)
+
+**Install in 30 seconds with one command:**
+
+```bash
+npx substack-analyzer-mcp
+```
+
+This will:
+- ✅ Check for Python dependencies
+- ✅ Prompt for your Substack URL and Gemini API key
+- ✅ Install everything automatically
+- ✅ Configure Claude Desktop for you
+- ✅ Be ready to use after restarting Claude!
+
+**Prerequisites:**
+- Node.js 18+ and Python 3 installed
+- A [Gemini API key](https://makersuite.google.com/app/apikey)
+- Claude Desktop app
+
+After setup, just restart Claude and use commands like:
+- "Fetch my Substack posts"
+- "Analyze my writing"
+- "What have I written about AI?"
+
+---
+
 ## Features
 
 -   **Interactive Web UI**: Built with Streamlit for easy use.
@@ -10,8 +37,103 @@ This tool fetches your Substack essays, analyzes them using Google's Gemini AI (
     -   **Overall Summary**: Get a comprehensive analysis of themes, writing style, author's perspective, key takeaways, and inferred intellectual journey.
     -   **Interactive Q&A**: Ask specific questions about the content of your essays and get answers from Gemini based on the full text.
 -   **Secure API Key Handling**: Uses environment variables (via a `.env` file or system export) for your Gemini API key.
+-   **MCP Server**: Use the analyzer as tools directly in Claude Desktop (NEW!)
 
-## Setup Instructions
+## Quick Start with Docker (Web UI)
+
+**The easiest way to run the web application:**
+
+1. **Clone the Repository:**
+   ```bash
+   git clone <repository-url> # Replace <repository-url> with the actual URL
+   cd Substack-Analysis
+   ```
+
+2. **Get Your Gemini API Key:**
+   - Go to [Google AI Studio](https://makersuite.google.com/app/apikey) to generate an API key
+   - Ensure your Google Cloud Project has **"Generative Language API"** and **"Vertex AI API"** enabled
+   - Make sure billing is enabled for your project
+
+3. **Set Up Your API Key:**
+   ```bash
+   # Copy the example environment file
+   cp env.example .env
+   
+   # Edit .env and add your actual API key
+   # GEMINI_API_KEY=your-actual-api-key-here
+   ```
+
+4. **Run with Docker:**
+   ```bash
+   # Make sure Docker is running, then simply run:
+   ./run-docker.sh
+   ```
+   
+   Or manually with docker-compose:
+   ```bash
+   docker-compose up --build
+   ```
+
+5. **Open Your Browser:**
+   Go to `http://localhost:8501` and start analyzing!
+
+**To stop the application:**
+```bash
+docker-compose down
+```
+
+## MCP Server for Claude Desktop
+
+You can also use this analyzer directly in Claude Desktop as an MCP server!
+
+### Quick Setup (Recommended):
+
+Just run:
+```bash
+npx substack-analyzer-mcp
+```
+
+The interactive setup will guide you through everything!
+
+### Manual Setup:
+
+If you prefer to set it up manually:
+
+1. **Install MCP Server Dependencies:**
+   ```bash
+   cd mcp-server
+   npm install
+   ```
+
+2. **Configure Claude Desktop:**
+   Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+   ```json
+   {
+     "mcpServers": {
+       "substack-analyzer": {
+         "command": "node",
+         "args": ["/path/to/Substack-Analysis/mcp-server/index.js"],
+         "env": {
+           "GEMINI_API_KEY": "your-gemini-api-key",
+           "SUBSTACK_URL": "https://jonathanpolitzki.substack.com/"
+         }
+       }
+     }
+   }
+   ```
+
+3. **Restart Claude Desktop**
+
+Now you can ask Claude to:
+- "Fetch my Substack posts"
+- "Analyze my writing and give me a summary"
+- "What have I written about AI?"
+
+See the [MCP Server README](mcp-server/README.md) for detailed setup instructions.
+
+## Manual Setup Instructions
+
+If you prefer to run without Docker:
 
 1.  **Clone the Repository:**
     ```bash
@@ -49,6 +171,13 @@ This tool fetches your Substack essays, analyzes them using Google's Gemini AI (
 
 ## How to Run the Application
 
+### With Docker (Recommended)
+```bash
+./run-docker.sh
+```
+Then open `http://localhost:8501` in your browser.
+
+### Manual Run
 1.  **Activate Virtual Environment (if you created one):**
     ```bash
     source venv/bin/activate
@@ -113,7 +242,11 @@ This tool fetches your Substack essays, analyzes them using Google's Gemini AI (
 ├── scraper.py          # Contains the SubstackScraper class
 ├── analyzer.py         # Contains the SubstackAnalyzer class for Gemini AI
 ├── requirements.txt    # Python dependencies
-├── .env.example        # (Illustrative) Example for .env file structure
+├── Dockerfile          # Docker container configuration
+├── docker-compose.yml  # Docker Compose for easy container management
+├── run-docker.sh       # Easy Docker runner script
+├── .dockerignore       # Files to exclude from Docker build
+├── env.example         # Example environment variables file
 └── README.md           # This file
 ```
 *(Note: `main.py`, `substack_data/` directory, and its JSON/image outputs are part of the previous script-based version and are not directly used by the `app.py` Streamlit application unless you re-integrate those features.)*
