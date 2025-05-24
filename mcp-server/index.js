@@ -33,7 +33,7 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 async function runPythonScript(scriptPath, args = []) {
   return new Promise((resolve, reject) => {
     const pythonProcess = spawn('python3', [scriptPath, ...args], {
-      cwd: projectRoot,
+      cwd: __dirname,
       env: { ...process.env, GEMINI_API_KEY }
     });
 
