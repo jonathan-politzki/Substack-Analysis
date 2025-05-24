@@ -142,7 +142,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 import asyncio
 import sys
 import json
-sys.path.append('${projectRoot}')
+# sys.path.append('${projectRoot}') # Removed this line
 from scraper import SubstackScraper
 
 async def fetch():
@@ -158,11 +158,11 @@ async def fetch():
 result = asyncio.run(fetch())
 print(json.dumps(result))
 `;
-        const scriptPath = join(projectRoot, 'temp_fetch.py');
+        const scriptPath = join(__dirname, 'temp_fetch.py');
         await fs.writeFile(scriptPath, fetchScript);
         
         try {
-          const output = await runPythonScript(scriptPath);
+          const output = await runPythonScript('temp_fetch.py');
           const posts = JSON.parse(output);
           
           // Update cache
@@ -198,7 +198,7 @@ print(json.dumps(result))
         }
 
         // Save posts to a temporary file to avoid embedding large content
-        const postsDataPath = join(projectRoot, 'temp_posts_data.json');
+        const postsDataPath = join(__dirname, 'temp_posts_data.json');
         await fs.writeFile(postsDataPath, JSON.stringify(cachedPosts));
 
         // Create a Python script to analyze posts
@@ -206,7 +206,7 @@ print(json.dumps(result))
 import sys
 import json
 import os
-sys.path.append('${projectRoot}')
+# sys.path.append('${projectRoot}') # Removed this line
 from analyzer import SubstackAnalyzer
 from datetime import datetime
 
@@ -252,11 +252,11 @@ Here are the posts:
 response = analyzer.model.generate_content(prompt)
 print(response.text)
 `;
-        const scriptPath = join(projectRoot, 'temp_analyze.py');
+        const scriptPath = join(__dirname, 'temp_analyze.py');
         await fs.writeFile(scriptPath, analyzeScript);
         
         try {
-          const output = await runPythonScript(scriptPath);
+          const output = await runPythonScript('temp_analyze.py');
           await fs.unlink(scriptPath);
           await fs.unlink(postsDataPath);
           
@@ -293,7 +293,7 @@ print(response.text)
         }
 
         // Save posts to a temporary file to avoid embedding large content
-        const postsDataPath = join(projectRoot, 'temp_posts_data_ask.json');
+        const postsDataPath = join(__dirname, 'temp_posts_data_ask.json');
         await fs.writeFile(postsDataPath, JSON.stringify(cachedPosts));
 
         // Create a Python script to ask questions
@@ -301,7 +301,7 @@ print(response.text)
 import sys
 import json
 import os
-sys.path.append('${projectRoot}')
+# sys.path.append('${projectRoot}') # Removed this line
 from analyzer import SubstackAnalyzer
 from datetime import datetime
 
@@ -354,11 +354,11 @@ Answer:"""
 response = analyzer.model.generate_content(prompt)
 print(response.text)
 `;
-        const scriptPath = join(projectRoot, 'temp_ask.py');
+        const scriptPath = join(__dirname, 'temp_ask.py');
         await fs.writeFile(scriptPath, askScript);
         
         try {
-          const output = await runPythonScript(scriptPath);
+          const output = await runPythonScript('temp_ask.py');
           await fs.unlink(scriptPath);
           await fs.unlink(postsDataPath);
           
