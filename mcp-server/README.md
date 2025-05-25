@@ -1,159 +1,58 @@
-# Substack Analysis MCP Server
+# Substack Analysis MCP Server for Claude Desktop
 
-This is an MCP (Model Context Protocol) server that allows you to analyze your Substack essays using Google's Gemini AI directly from Claude Desktop.
+This tool allows you to analyze your Substack essays using Gemini AI, directly within Claude Desktop. It fetches your posts, summarizes your writing, and answers specific questions about your content.
 
-## Quick Install
+## Quick Start
 
-```bash
-npx substack-analysis-mcp
-```
+1.  **Ensure Prerequisites:**
+    *   Node.js (v18.0.0 or higher)
+    *   Python 3
+    *   pip3 (Python package installer)
+    *   A Google Gemini API Key
+    *   Your Substack URL (e.g., `https://yourname.substack.com/`)
 
-## Features
+2.  **Install & Configure:**
+    Run this command in your terminal:
+    ```bash
+    npx substack-analysis-mcp@latest
+    ```
+    The interactive setup will guide you through providing your Substack URL and Gemini API Key. It will also automatically check for Python/pip and configure Claude Desktop.
 
-The MCP server exposes three tools to Claude:
+3.  **Restart Claude Desktop:**
+    After the setup completes, restart your Claude Desktop application.
 
-1. **fetch_substack_posts** - Fetches the latest posts from your Substack RSS feed
-2. **analyze_writing_summary** - Generates a comprehensive analysis of your writing covering themes, style, and intellectual journey
-3. **ask_about_writing** - Ask specific questions about your essays and get answers based on the full text
+## Available Tools
 
-## Prerequisites
+Once installed and Claude Desktop is restarted, you can use these commands:
 
-- Node.js 18+ installed
-- Python 3.x installed (for running the analyzer)
-- A Google Gemini API key
-- Claude Desktop app
+*   **Fetch your Substack posts:**
+    *   Example: `Fetch my Substack posts`
+    *   Optional: `Fetch my Substack posts (force refresh)` or send `{ "force_refresh": true }` to ignore the 1-hour cache.
 
-## Setup Instructions
+*   **Analyze your writing:**
+    *   Example: `Analyze my writing`
+    *   This provides a comprehensive summary of themes, style, and intellectual journey.
 
-### 1. Install Dependencies
-
-First, install the Node.js dependencies:
-
-```bash
-cd mcp-server
-npm install
-```
-
-### 2. Configure Environment
-
-Copy the example environment file and add your API key:
-
-```bash
-cp env.example .env
-```
-
-Edit `.env` and add your Gemini API key:
-```
-GEMINI_API_KEY=your-actual-api-key-here
-SUBSTACK_URL=https://jonathanpolitzki.substack.com/
-```
-
-### 3. Configure Claude Desktop
-
-You need to add this MCP server to your Claude Desktop configuration.
-
-**On macOS:**
-
-1. Open your Claude Desktop configuration file:
-   ```bash
-   open ~/Library/Application\ Support/Claude/claude_desktop_config.json
-   ```
-
-2. Add the following to the `mcpServers` section (create it if it doesn't exist):
-   ```json
-   {
-     "mcpServers": {
-       "substack-analysis": {
-         "command": "node",
-         "args": [
-           "/Users/jonathanpolitzki/Desktop/Coding/Substack-Analysis/mcp-server/index.js"
-         ],
-         "env": {
-           "GEMINI_API_KEY": "your-actual-gemini-api-key",
-           "SUBSTACK_URL": "https://jonathanpolitzki.substack.com/"
-         }
-       }
-     }
-   }
-   ```
-
-   Make sure to:
-   - Replace the path with the absolute path to your `mcp-server/index.js` file
-   - Add your actual Gemini API key
-   - Update the Substack URL if needed
-
-3. Restart Claude Desktop for the changes to take effect
-
-**On Windows:**
-
-The config file is located at:
-```
-%APPDATA%\Claude\claude_desktop_config.json
-```
-
-### 4. Test the Server
-
-You can test the server standalone:
-
-```bash
-node index.js
-```
-
-It should output: `Substack Analyzer MCP server running`
-
-## Using in Claude
-
-Once configured, you can use these commands in Claude:
-
-1. **Fetch your posts:**
-   - "Fetch my Substack posts"
-   - "Get the latest posts from my Substack"
-
-2. **Analyze your writing:**
-   - "Analyze my Substack writing and give me a summary"
-   - "What are the main themes in my essays?"
-
-3. **Ask questions:**
-   - "What have I written about AI?"
-   - "Summarize my thoughts on technology"
-   - "How has my writing style evolved?"
+*   **Ask about your writing:**
+    *   Example: `What have I written about Politzki's Law?`
+    *   Pass your question directly or use the input field: `{ "question": "Your question here" }`
 
 ## How It Works
 
-The MCP server:
-1. Uses the existing Python scraper and analyzer code
-2. Spawns Python processes to run the analysis
-3. Caches fetched posts for 1 hour to avoid repeated API calls
-4. Returns results to Claude in a structured format
+The `npx substack-analysis-mcp@latest` command downloads and runs a setup script. This script:
+1.  Copies the MCP server (including Python scripts for scraping and AI analysis) to a local directory.
+2.  Prompts you for your Substack URL and Gemini API Key.
+3.  Saves these as environment variables for the server.
+4.  Automatically updates your Claude Desktop configuration to recognize these new tools.
+
+The server then uses Python and your Gemini API key to process your Substack content when you invoke the tools in Claude.
 
 ## Troubleshooting
 
-### "Python script failed" errors
-- Make sure Python 3 is installed and accessible as `python3`
-- Ensure all Python dependencies are installed in the parent directory:
-  ```bash
-  cd ..
-  pip install -r requirements.txt
-  ```
-
-### "GEMINI_API_KEY environment variable is required"
-- Make sure you've set up your `.env` file or added the API key to the Claude config
-
-### Claude doesn't see the tools
-- Restart Claude Desktop after updating the configuration
-- Check that the path in the config file is absolute and correct
-- Verify the MCP server starts without errors
-
-## Development
-
-To run in development mode with auto-reload:
-
-```bash
-npm run dev
-```
-
-## Notes
-
-- The server caches posts for 1 hour. Use `force_refresh: true` to bypass the cache
-- RSS feeds typically only provide the ~20 most recent posts
-- All analysis is done using Google's Gemini AI, so API usage costs apply 
+*   **`ModuleNotFoundError` (e.g., no module named 'scraper'):**
+    *   This usually means the Python scripts were not correctly placed or their dependencies weren't installed. Version `1.0.8+` should have resolved this by bundling all necessary files. Ensure you are using the latest version: `npx substack-analysis-mcp@latest`.
+    *   Verify Python 3 and pip3 are correctly installed and in your system's PATH.
+*   **Claude doesn't see the tools:**
+    *   Ensure you restarted Claude Desktop after the setup script completed.
+    *   Check the `claude_desktop_config.json` file (path shown at the end of setup) to see if the `substack-analysis` server is listed under `mcpServers`.
+*   **Other errors:** The setup script or MCP server will output error messages to the console. These can help diagnose issues with API keys, Substack URLs, or Python execution. 
